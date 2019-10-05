@@ -7,7 +7,6 @@
 
 
 void vTaskBlink( void *argument);
-void vTaskHello (void *argument);
 void vTaskSendToUART(void *argument);
 void vTaskADCConvert (void *argument);
 void vTask1Wire (void *argument);
