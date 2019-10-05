@@ -180,7 +180,7 @@ int main (void){
 
 
 	xTaskCreate(vTaskMainConvert, "ADC ", 128, NULL, 2, NULL);
-	xTaskCreate(vTaskTEMP, "Temp", 128, NULL, 1, NULL);
+	xTaskCreate(vTaskTemp, "Temp", 128, NULL, 1, NULL);
 	xTaskCreate(vTaskUSART, "UART ", 128, NULL, 1, NULL);
 
 	vTaskStartScheduler();
