@@ -10,11 +10,7 @@ static float noiseStep = ((float)120/4095);
 //-------------------------------------
 
 //------------------------------------------------------------
-static xQueueHandle TransmitDataTemp1;
-static xQueueHandle TransmitDataTemp2;
-static xQueueHandle TransmitDataADC3;
-static xQueueHandle TransmitDataADC4;
-static xQueueHandle ReceiveCommand;
+
 
 static uint16_t valueADC[2];
 
@@ -189,121 +185,54 @@ int main (void){
 
 	ADC1->CR2 |= ADC_CR2_DMA;
 
-	//--------------------------------------------------------------------------------
-	TransmitDataTemp1 = xQueueCreate(3,sizeof(uint16_t));
-	TransmitDataTemp2 = xQueueCreate(3,sizeof(uint16_t));
-	TransmitDataADC3 = xQueueCreate(3,sizeof(uint16_t));
-	TransmitDataADC4 = xQueueCreate(3,sizeof(uint16_t));
 
-	ReceiveCommand = xQueueCreate(1, sizeof(uint8_t));
 
-	TIM2->CR1 |= TIM_CR1_UDIS;
 	GPIOC->CRH |= GPIO_CRH_MODE13; // PC13   - output
 	GPIOC->CRH &= ~GPIO_CRH_CNF13;  //PC13   - GP out PP
 
-	//xTaskCreate(vTaskBlink, "Led Blink 13", 16, NULL, 1, NULL);
-	//xTaskCreate(vTaskHello, "Hello", 32, NULL, 1, NULL);
-	xTaskCreate(vTaskADCConvert, "ADC ", 128, NULL, 1, NULL);
-	xTaskCreate(vTask1Wire, "Temp", 128, NULL, 1, NULL);
-	xTaskCreate(vTaskSendToUART, "UART ", 128, NULL, 1, NULL);
-
-	vTaskStartScheduler();
-
-	while (1){
-		USART1SendStr("Hello ");
-		USART1SendStr("\r\n");
-	}
-
-
-}
-
-
-//================================================================================
-void vTaskHello (void *argument){
-
-	while(1){
-		USART1SendStr("Hello ");
-		USART1SendStr("\r\n");
-		vTaskDelay(2000);
-	}
-}
-
-
-void vTask1Wire (void *argument){
 	uint8_t dt[8];
 	uint8_t status;
 	uint16_t raw_temper;
 	//float temper;
 	char c;
-	char str1[60];
+	char strbuffer[50];
 
 	port_init();
 	status = ds18b20_init(SKIP_ROM);
-	sprintf(str1,"Init Status: %d\r\n",status);
-	USART1SendStr(str1);USART1SendStr("\r\n");
-
-while (1){
-	ds18b20_MeasureTemperCmd(SKIP_ROM, 0);
-	vTaskDelay(1000);
-	ds18b20_ReadStratcpad(SKIP_ROM, dt, 0);
-	raw_temper = ((uint16_t)dt[1]<<8)|dt[0];
-	xQueueSend(TransmitDataTemp1,&raw_temper,0);
-	vTaskDelay(1000);
-}
-
-}
-
-
-void vTaskSendToUART(void *argument){
-	uint16_t uBuffer;
-	float fBuffer;
-	char strbuffer[6];
-
+	sprintf(strbuffer,"Init Status: %d\r\n",status);
+	USART1SendStr(strbuffer);
 
 	while (1){
-		if (uxQueueMessagesWaiting(TransmitDataTemp1)!= 0){
-			xQueueReceive(TransmitDataTemp1, &uBuffer, 0);
-			sprintf(strbuffer, "%u",uBuffer);
-			USART1SendStr("Temp1=");USART1SendStr(strbuffer);USART1SendStr("\r\n");
-		}
-		if (uxQueueMessagesWaiting(TransmitDataTemp2)!= 0){
-			xQueueReceive(TransmitDataTemp2, &uBuffer, 0);
-			sprintf(strbuffer, "%u",uBuffer);
-			USART1SendStr("Temp2=");USART1SendStr(strbuffer);USART1SendStr("\r\n");
-		}
-		if (uxQueueMessagesWaiting(TransmitDataADC3)!= 0){
-			xQueueReceive(TransmitDataADC3, &uBuffer, 0);
 
-			sprintf(strbuffer, "%u",uBuffer);
-			USART1SendStr("BatLevel=");USART1SendStr(strbuffer);USART1SendStr("\r\n");
-		}
-		if (uxQueueMessagesWaiting(TransmitDataADC4)!= 0){
-			xQueueReceive(TransmitDataADC4, &uBuffer, 0);
-			sprintf(strbuffer, "%u",uBuffer);
-			USART1SendStr("NoiseLevel=");USART1SendStr(strbuffer);USART1SendStr("\r\n");
-		}
-		vTaskDelay(1000);
+		ds18b20_MeasureTemperCmd(SKIP_ROM, 0);
+		delay(1000);
+		ds18b20_ReadStratcpad(SKIP_ROM, dt, 0);
+		raw_temper = ((uint16_t)dt[1]<<8)|dt[0];
+		sprintf(strbuffer, "%u",raw_temper);
+		USART1SendStr("Temp1=");USART1SendStr(strbuffer);USART1SendStr("\r\n");
+		delay(1000);
 
-	}
-}
-void vTaskBlink( void *argument){
-	while(1){
-	GPIOC->BSRR |= GPIO_BSRR_BS13;
-	vTaskDelay(1000);
-	GPIOC->BSRR |= GPIO_BSRR_BR13;
-	vTaskDelay(1000);
-	}
-}
-void vTaskADCConvert (void *argument){
-	while (1){
+
+
 		ADC1->CR2 |= ADC_CR2_SWSTART; // start
 		while (  (DMA1->ISR & DMA_ISR_TCIF1) == 0  );
-		xQueueSend(TransmitDataADC3,&valueADC[0],0);
-		xQueueSend(TransmitDataADC4,&valueADC[1],0);
-		vTaskDelay(1000);
+		sprintf(strbuffer, "%u",valueADC[0]);
+		USART1SendStr("BatLevel=");USART1SendStr(strbuffer);USART1SendStr("\r\n");
+		sprintf(strbuffer, "%u",valueADC[1]);
+		USART1SendStr("NoiseLevel=");USART1SendStr(strbuffer);USART1SendStr("\r\n");
+		delay(1000);
+
+
+
 	}
+
+
 }
 
+void delay(int milisec){
+	milisec*= (SystemCoreClock/1000);
+	while(milisec--) __asm__("nop");
+}
 
 //=================================================================================
 void USART1_IRQHandler (void ){
@@ -319,7 +248,7 @@ void USART1_IRQHandler (void ){
 		if (data==0){
 			i=0;
 			commandBuffer = 0xFF;
-			xQueueSendToBackFromISR(ReceiveCommand,&commandBuffer,0);
+			//xQueueSendToBackFromISR(ReceiveCommand,&commandBuffer,0);
 					// описать команды получения
 					// лучше чтобы уменьшить время прерывания, сохранять команду и устанавливать флаг что пришла новая команда
 					// после ее обработки этот флаг сбрасывать
