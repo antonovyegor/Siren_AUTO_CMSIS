@@ -6,12 +6,10 @@
 #include "ds18b20.h"
 
 
-void vTaskBlink( void *argument);
-void vTaskHello (void *argument);
-void vTaskSendToUART(void *argument);
-void vTaskADCConvert (void *argument);
-void vTask1Wire (void *argument);
-void vTaskTempUSART(void *argument);
+void vTaskUART(void *argument);
+void vTaskMainConvert (void *argument);
+void vTaskTemp (void *argument);
+void vTaskUSART(void *argument);
 
 
 

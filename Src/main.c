@@ -2,11 +2,6 @@
 #include "stdio.h"
 
 
-
-static float adcStep = ((float)3.3/4095);
-static float noiseStep = ((float)120/4095);
-//------------------------------------
-
 //-------------------------------------
 
 //------------------------------------------------------------
@@ -69,7 +64,6 @@ int main (void){
 
 	//RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
 
-
 	//GPIO
 		// 1 Wire pins
 	GPIOA->CRH |= GPIO_CRH_MODE13; // output
@@ -96,14 +90,6 @@ int main (void){
 	GPIOA->CRH |= GPIO_CRH_CNF9_1;  //PA9   - GP out PP   TX
 	GPIOA->CRH &= ~ GPIO_CRH_MODE10; // PA10  - input                     RX
 	GPIOA->CRH |= GPIO_CRH_CNF10_0;  //PA10  - Alternative input float   RX
-
-/*
-
-	GPIOB->CRH |= GPIO_CRH_MODE10; // PB10    - output      TX
-	GPIOB->CRH |= GPIO_CRH_CNF10_1;  //PB10  - GP out PP   TX
-	GPIOB->CRH &= ~ GPIO_CRH_MODE11; // PB11  - input                     RX
-	GPIOB->CRH |= GPIO_CRH_CNF11_0;  //PB11  - Alternative input float   RX
-*/
 
 
 
@@ -140,19 +126,11 @@ int main (void){
 	ADC1->SMPR2 &= ~ADC_SMPR2_SMP1; //  1 канал  сэмплирование  циклов
 
 
-
 	ADC1->SMPR2 |= ADC_SMPR2_SMP0 ;
 	ADC1->SMPR2 |= ADC_SMPR2_SMP1 ;
 
-
-
-
 	ADC1->SQR3 &= ~ADC_SQR3_SQ1;  //PA0
 	ADC1->SQR3 |= ADC_SQR3_SQ2_0;
-
-
-
-
 
 
 	ADC1->CR1 |= ADC_CR1_SCAN;
@@ -163,7 +141,6 @@ int main (void){
 	while ((ADC1->CR2 & ADC_CR2_RSTCAL) == ADC_CR2_RSTCAL);
 	ADC1->CR2 |= ADC_CR2_CAL;
 	while ((ADC1->CR2 & ADC_CR2_RSTCAL) == ADC_CR2_CAL); // пока там 1 идет калибровка по окончанию идет сброс бита
-
 
 
 	//--------------------------------------------------------------------------------
@@ -201,11 +178,10 @@ int main (void){
 	GPIOC->CRH |= GPIO_CRH_MODE13; // PC13   - output
 	GPIOC->CRH &= ~GPIO_CRH_CNF13;  //PC13   - GP out PP
 
-	//xTaskCreate(vTaskBlink, "Led Blink 13", 16, NULL, 1, NULL);
-	//xTaskCreate(vTaskHello, "Hello", 32, NULL, 1, NULL);
-	xTaskCreate(vTaskADCConvert, "ADC ", 128, NULL, 1, NULL);
-	xTaskCreate(vTask1Wire, "Temp", 128, NULL, 1, NULL);
-	xTaskCreate(vTaskSendToUART, "UART ", 128, NULL, 1, NULL);
+
+	xTaskCreate(vTaskMainConvert, "ADC ", 128, NULL, 2, NULL);
+	xTaskCreate(vTaskTEMP, "Temp", 128, NULL, 1, NULL);
+	xTaskCreate(vTaskUSART, "UART ", 128, NULL, 1, NULL);
 
 	vTaskStartScheduler();
 
@@ -219,21 +195,13 @@ int main (void){
 
 
 //================================================================================
-void vTaskHello (void *argument){
-
-	while(1){
-		USART1SendStr("Hello ");
-		USART1SendStr("\r\n");
-		vTaskDelay(2000);
-	}
-}
 
 
-void vTask1Wire (void *argument){
+void vTaskTemp (void *argument){
 	uint8_t dt[8];
 	uint8_t status;
 	uint16_t raw_temper;
-	//float temper;
+
 	char c;
 	char str1[60];
 
@@ -254,9 +222,8 @@ while (1){
 }
 
 
-void vTaskSendToUART(void *argument){
+void vTaskUSART(void *argument){
 	uint16_t uBuffer;
-	float fBuffer;
 	char strbuffer[6];
 
 
@@ -286,15 +253,8 @@ void vTaskSendToUART(void *argument){
 
 	}
 }
-void vTaskBlink( void *argument){
-	while(1){
-	GPIOC->BSRR |= GPIO_BSRR_BS13;
-	vTaskDelay(1000);
-	GPIOC->BSRR |= GPIO_BSRR_BR13;
-	vTaskDelay(1000);
-	}
-}
-void vTaskADCConvert (void *argument){
+
+void vTaskMainConvert (void *argument){
 	while (1){
 		ADC1->CR2 |= ADC_CR2_SWSTART; // start
 		while (  (DMA1->ISR & DMA_ISR_TCIF1) == 0  );
