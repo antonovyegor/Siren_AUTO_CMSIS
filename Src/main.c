@@ -201,26 +201,29 @@ int main (void){
 	status = ds18b20_init(SKIP_ROM);
 	sprintf(strbuffer,"Init Status: %d\r\n",status);
 	USART1SendStr(strbuffer);
-
+	ds18b20_MeasureTemperCmd(SKIP_ROM, 0);
+	delay(100);
 	while (1){
 
 		ds18b20_MeasureTemperCmd(SKIP_ROM, 0);
-		delay(1000);
-		ds18b20_ReadStratcpad(SKIP_ROM, dt, 0);
-		raw_temper = ((uint16_t)dt[1]<<8)|dt[0];
-		sprintf(strbuffer, "%u",raw_temper);
-		USART1SendStr("Temp1=");USART1SendStr(strbuffer);USART1SendStr("\r\n");
-		delay(1000);
-
-
 
 		ADC1->CR2 |= ADC_CR2_SWSTART; // start
 		while (  (DMA1->ISR & DMA_ISR_TCIF1) == 0  );
 		sprintf(strbuffer, "%u",valueADC[0]);
-		USART1SendStr("BatLevel=");USART1SendStr(strbuffer);USART1SendStr("\r\n");
+		USART1SendStr("BatLevel=   ");USART1SendStr(strbuffer);USART1SendStr("\r\n");
 		sprintf(strbuffer, "%u",valueADC[1]);
-		USART1SendStr("NoiseLevel=");USART1SendStr(strbuffer);USART1SendStr("\r\n");
-		delay(1000);
+		USART1SendStr("NoiseLevel= ");USART1SendStr(strbuffer);USART1SendStr("\r\n");
+
+
+
+		delay(20);
+
+
+		ds18b20_ReadStratcpad(SKIP_ROM, dt, 0);
+		raw_temper = ((uint16_t)dt[1]<<8)|dt[0];
+		sprintf(strbuffer, "%u",raw_temper);
+		USART1SendStr("Temp1=      ");USART1SendStr(strbuffer);USART1SendStr("\r\n");
+
 
 
 
