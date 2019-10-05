@@ -9,7 +9,8 @@ static xQueueHandle ReceiveCommand;
 
 static uint16_t valueADC[2];
 
-
+char str[100];
+uint8_t i=0;
 
 int main (void){
 
@@ -211,6 +212,7 @@ void vTaskBlink( void *argument){
 	vTaskDelay(1000);
 	GPIOC->BSRR |= GPIO_BSRR_BR13;
 	vTaskDelay(1000);
+	USART1SendStr("Hello\r\n");
 	}
 }
 void vTaskADCConvert (void *argument){
@@ -228,26 +230,28 @@ void vTaskADCConvert (void *argument){
 void USART1_IRQHandler (void ){
 	uint8_t commandBuffer;
 	char data;
-	char str[] = "";
-	uint8_t i=0;
 	if (USART1->SR & USART_SR_RXNE){
 		USART1->SR &= ~USART_SR_RXNE;
 
 		data=USART1->DR;
-		USART1SendByte(data);
-		/*if (data==0){
-			i=0;
-			commandBuffer = 0xFF;
-			xQueueSendToBackFromISR(ReceiveCommand,&commandBuffer,0);
-					// описать команды получения
-					// лучше чтобы уменьшить время прерывания, сохранять команду и устанавливать флаг что пришла новая команда
-					// после ее обработки этот флаг сбрасывать
+		if (data=='\n' | data=='\r' | data==0 | data==NULL | i==99){
 
-			// обнуление формирование строки, команды, отправка команды в очередь
+
+
+
+			i=0;
+			memset(&str[0], 0, sizeof(str));
+			//commandBuffer = 0xFF;
+			//xQueueSendToBackFromISR(ReceiveCommand,&commandBuffer,0);
+
 		}
 		else {
 			str[i++]=data;
-		}*/
+
+		}
+
+
+
 	}
 
 }
