@@ -158,6 +158,7 @@ int main (void){
 //================================================================================
 
 void vTask1Wire (void *argument){
+
 	uint8_t dt[8];
 	uint8_t status;
 	uint16_t raw_temper;
