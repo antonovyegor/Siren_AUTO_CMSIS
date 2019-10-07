@@ -1,4 +1,6 @@
 #include "ds18b20.h"
+#include "defines.h"
+
 //--------------------------------------------------
 void DelayMicro( uint32_t micros)
 {
@@ -9,9 +11,10 @@ while (micros--) ;
 //--------------------------------------------------
 void port_init(void)
 {
-  GPIOB->CRH |= GPIO_CRH_MODE11;
-  GPIOB->CRH |= GPIO_CRH_CNF11_0;
-  GPIOB->CRH &= ~GPIO_CRH_CNF11_1;
+	RCC->APB2ENR |= RCC_APB2ENR_IOPBEN;
+	GPIOB->CRH |= GPIO_CRH_MODE11;
+	GPIOB->CRH |= GPIO_CRH_CNF11_0;
+	GPIOB->CRH &= ~GPIO_CRH_CNF11_1;
 }
 //--------------------------------------------------
 uint8_t ds18b20_Reset(void)
@@ -60,50 +63,58 @@ void ds18b20_WriteByte(uint8_t dt)
   for (uint8_t i = 0; i < 8; i++)
   {
     ds18b20_WriteBit(dt >> i & 1);
-    //Delay Protection
     DelayMicro(5);
   }
 }
 //-----------------------------------------------
-uint8_t ds18b20_init(uint8_t mode)
+uint8_t ds18b20_init(uint8_t mode, uint8_t *ROM)
 {
 	if(ds18b20_Reset()) return 1;
-  if(mode==SKIP_ROM)
-  {
-		//SKIP ROM
-		ds18b20_WriteByte(0xCC);
-		//WRITE SCRATCHPAD
-		ds18b20_WriteByte(0x4E);
-		//TH REGISTER 100 ��������
-		ds18b20_WriteByte(0x64);
-		//TL REGISTER - 30 ��������
-		ds18b20_WriteByte(0x1E);
-		//Resolution 12 bit
-		ds18b20_WriteByte(RESOLUTION_12BIT);
-  }
+
+	if(mode==SKIP_ROM)
+		ds18b20_WriteByte(0xCC);//SKIP ROM
+	else{
+		ds18b20_WriteByte(0x55); // MATCH ROM
+		vTaskDelay(1);
+		for(int j=0;j<8;j++)
+			ds18b20_WriteByte(&ROM[j]); //SKIP ROM
+
+		vTaskDelay(1);
+	}
+	ds18b20_WriteByte(0x4E);//WRITE SCRATCHPAD
+	ds18b20_WriteByte(0x64);//TH REGISTER 100C
+	ds18b20_WriteByte(0x1E);//TL REGISTER - 30C
+	ds18b20_WriteByte(RESOLUTION_12BIT);//Resolution 12 bit
   return 0;
 }
 //----------------------------------------------------------
-void ds18b20_MeasureTemperCmd(uint8_t mode, uint8_t DevNum)
+void ds18b20_MeasureTemperCmd(uint8_t mode, uint8_t *ROM)
 {
   ds18b20_Reset();
   if(mode==SKIP_ROM)
-  {
-    //SKIP ROM
-    ds18b20_WriteByte(0xCC);
+	  ds18b20_WriteByte(0xCC);//SKIP ROM
+  else {
+	  ds18b20_WriteByte(0x55); // MATCH ROM
+	  for(int j=0;j<8;j++)
+		  ds18b20_WriteByte(ROM[j]); //SKIP ROM
   }
   //CONVERT T
   ds18b20_WriteByte(0x44);
 }
 //----------------------------------------------------------
-void ds18b20_ReadStratcpad(uint8_t mode, uint8_t *Data, uint8_t DevNum)
+void ds18b20_ReadStratcpad(uint8_t mode, uint8_t *Data, uint8_t *ROM)
 {
   uint8_t i;
   ds18b20_Reset();
+
   if(mode==SKIP_ROM)
-  {
-    //SKIP ROM
-    ds18b20_WriteByte(0xCC);
+	  ds18b20_WriteByte(0xCC); //SKIP ROM
+  else{
+	  ds18b20_WriteByte(0x55); // MATCH ROM
+	  vTaskDelay(1);
+	  for(int j=0;j<8;j++)
+		  ds18b20_WriteByte(ROM[j]); //SKIP ROM
+	  vTaskDelay(1);
   }
   //READ SCRATCHPAD
   ds18b20_WriteByte(0xBE);
@@ -127,3 +138,17 @@ float ds18b20_Convert(uint16_t dt)
   return t;
 }
 //----------------------------------------------------------
+
+void ds18b20_ReadROM(uint8_t *Data)
+{
+  uint8_t i;
+  ds18b20_Reset();
+  ds18b20_WriteByte(0x33);  // Read ROM  1 slave on the bus
+  for(i=0;i<8;i++)
+  {
+    Data[i] = ds18b20_ReadByte();
+  }
+
+}
+
+
