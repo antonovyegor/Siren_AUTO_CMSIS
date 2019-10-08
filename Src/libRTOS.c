@@ -6,8 +6,7 @@ extern xQueueHandle TransmitDataADC4;
 extern xQueueHandle ReceiveCommand;
 extern uint16_t valueADC[2];
 
-
-
+char commandStr[20];
 
 void vTask1Wire (void *argument){
 
@@ -33,8 +32,10 @@ while (1){
 void vTaskSendToUART(void *argument){
 	uint16_t uBuffer;
 	char strbuffer[6];
+	char bufc;
+	uint8_t indexC =0;
 
-	//USART  1
+
 	USART1_GPIO_Init();
 	USART1_Mode_Init();
 
@@ -60,7 +61,26 @@ void vTaskSendToUART(void *argument){
 			sprintf(strbuffer, "%u",uBuffer);
 			USART1SendStr("NoiseLevel=   ");USART1SendStr(strbuffer);USART1SendStr("\r\n");
 		}
-		vTaskDelay(1000);
+		if (uxQueueMessagesWaiting(ReceiveCommand)!=0){
+			xQueueReceiveFromISR(ReceiveCommand, &bufc, 0);
+			if (bufc=='\n' || bufc=='\r' || bufc==0 || indexC==(sizeof(commandStr)-1)){
+			//	NVIC_DisableIRQ(USART1_IRQn);
+				if (strcmp(strsub(commandStr,0,6), "ADC=ON" )){
+					ADC_POWER(ON);
+				}
+				if (strcmp(strsub(commandStr,0,7), "ADC=OFF" )){
+					ADC_POWER(OFF);
+				}
+				indexC=0;
+				memset(&commandStr[0], 0, sizeof(commandStr));
+			//	NVIC_EnableIRQ(USART1_IRQn);
+			}
+			else {
+			commandStr[indexC++]=bufc;
+			}
+		}
+
+		vTaskDelay(30);
 
 	}
 }
@@ -103,6 +123,16 @@ void vTaskReadROM(void *argument){
 	USART1SendStr(str);
 
 
+}
+
+const char* const strsub(char* s, size_t pos, size_t count)
+{
+   static char buf[BUFSIZ];
+   buf[sizeof buf - 1] = '\0';
+   if ( count >= BUFSIZ )
+      return NULL;
+   else
+      return strncpy(buf, s + pos, count);
 }
 
 

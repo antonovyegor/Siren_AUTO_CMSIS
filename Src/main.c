@@ -24,7 +24,7 @@ int main (void){
 	TransmitDataTemp2 = xQueueCreate(1,sizeof(uint16_t));
 	TransmitDataADC3 = xQueueCreate(3,sizeof(uint16_t));
 	TransmitDataADC4 = xQueueCreate(3,sizeof(uint16_t));
-	ReceiveCommand = xQueueCreate(1, sizeof(uint8_t));
+	ReceiveCommand = xQueueCreate(20, sizeof(char));
 
 
 	xTaskCreate(vTaskBlink, "Led Blink 13", 16, NULL, 1, NULL);

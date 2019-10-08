@@ -8,6 +8,7 @@
 #include "defines.h"
 #include "libUSART.h"
 #include <stdio.h>
+#include "string.h"
 
 
 
@@ -18,4 +19,5 @@ void vTask1Wire (void *argument);
 void vTaskTempUSART(void *argument);
 void vTaskReadROM(void *argument);
 void vTaskReadROM(void *argument);
+const char* const strsub(char* s, size_t pos, size_t count);
 
