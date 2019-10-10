@@ -137,3 +137,24 @@ const char* const strsub(char* s, size_t pos, size_t count)
 
 
 
+void vTaskPWM(void *argument){
+	PWM_Init_TIM3();
+	PWM_Level(60);
+	vTaskDelay(2000);
+	while(1){
+		PWM_Level(85);
+		vTaskDelay(15000);
+		PWM_Level(60);
+		vTaskDelay(15000);
+
+	}
+
+
+
+}
+
+
+
+
+
+

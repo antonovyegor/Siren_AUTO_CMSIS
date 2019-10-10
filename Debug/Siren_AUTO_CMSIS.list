@@ -27,23 +27,23 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  11 .ARM.attributes 00000029  00000000  00000000  00020070  2**0
                   CONTENTS, READONLY
- 12 .debug_info   0000ab48  00000000  00000000  00020099  2**0
+ 12 .debug_info   0000ab6c  00000000  00000000  00020099  2**0
                   CONTENTS, READONLY, DEBUGGING
- 13 .debug_abbrev 00001dd7  00000000  00000000  0002abe1  2**0
+ 13 .debug_abbrev 00001dd7  00000000  00000000  0002ac05  2**0
                   CONTENTS, READONLY, DEBUGGING
- 14 .debug_aranges 000006d8  00000000  00000000  0002c9b8  2**3
+ 14 .debug_aranges 000006e0  00000000  00000000  0002c9e0  2**3
                   CONTENTS, READONLY, DEBUGGING
- 15 .debug_ranges 000005e0  00000000  00000000  0002d090  2**3
+ 15 .debug_ranges 000005e8  00000000  00000000  0002d0c0  2**3
                   CONTENTS, READONLY, DEBUGGING
- 16 .debug_macro  00014379  00000000  00000000  0002d670  2**0
+ 16 .debug_macro  00014385  00000000  00000000  0002d6a8  2**0
                   CONTENTS, READONLY, DEBUGGING
- 17 .debug_line   00007e97  00000000  00000000  000419e9  2**0
+ 17 .debug_line   00007ee7  00000000  00000000  00041a2d  2**0
                   CONTENTS, READONLY, DEBUGGING
- 18 .debug_str    0006e861  00000000  00000000  00049880  2**0
+ 18 .debug_str    0006e86a  00000000  00000000  00049914  2**0
                   CONTENTS, READONLY, DEBUGGING
- 19 .comment      0000007b  00000000  00000000  000b80e1  2**0
+ 19 .comment      0000007b  00000000  00000000  000b817e  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  00001c1c  00000000  00000000  000b815c  2**2
+ 20 .debug_frame  00001c3c  00000000  00000000  000b81fc  2**2
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -7654,6 +7654,7 @@ int main (void){
  8002c10:	f423 0340 	bic.w	r3, r3, #12582912	; 0xc00000
  8002c14:	6053      	str	r3, [r2, #4]
 
+
 	//--------------------------------------------------------------------------------
 	TransmitDataTemp1 = xQueueCreate(1,sizeof(uint16_t));
  8002c16:	2200      	movs	r2, #0
@@ -7730,7 +7731,6 @@ int main (void){
 
 
 	//xTaskCreate(vTaskReadROM, "ROM", 128, NULL, 1, NULL);
-
 	xTaskCreate(vTaskSendToUART, "UART ", 128, NULL, 1, NULL);
  8002ca2:	2300      	movs	r3, #0
  8002ca4:	9301      	str	r3, [sp, #4]
