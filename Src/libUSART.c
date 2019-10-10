@@ -2,8 +2,7 @@
 #include "defines.h"
 
 
-char commandStr[100];
-uint8_t index;
+extern xQueueHandle ReceiveCommand;
 
 
 
@@ -34,25 +33,11 @@ void USART1_Mode_Init(void){
 
 }
 void USART1_IRQHandler (void ){
-	uint8_t commandBuffer;
 	char data;
 	if (USART1->SR & USART_SR_RXNE){
 		USART1->SR &= ~USART_SR_RXNE;
-
 		data=USART1->DR;
-		if (data=='\n' | data=='\r' | data==0 | data==NULL | index==99){
-			index=0;
-			memset(&commandStr[0], 0, sizeof(commandStr));
-			//commandBuffer = 0xFF;
-			//xQueueSendToBackFromISR(ReceiveCommand,&commandBuffer,0);
-		}
-		else {
-			commandStr[index++]=data;
-
-		}
-
-
-
+		xQueueSendToBackFromISR(ReceiveCommand,&data,0);
 	}
 
 }
@@ -73,3 +58,8 @@ void USART1SendStr(char* str){
 	}
 
 }
+
+
+
+
+

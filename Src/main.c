@@ -19,12 +19,13 @@ int main (void){
 	GPIOC->CRH |= GPIO_CRH_MODE13; // PC13   - output
 	GPIOC->CRH &= ~GPIO_CRH_CNF13;  //PC13   - GP out PP
 
+
 	//--------------------------------------------------------------------------------
 	TransmitDataTemp1 = xQueueCreate(1,sizeof(uint16_t));
 	TransmitDataTemp2 = xQueueCreate(1,sizeof(uint16_t));
 	TransmitDataADC3 = xQueueCreate(3,sizeof(uint16_t));
 	TransmitDataADC4 = xQueueCreate(3,sizeof(uint16_t));
-	ReceiveCommand = xQueueCreate(1, sizeof(uint8_t));
+	ReceiveCommand = xQueueCreate(30, sizeof(char));
 
 
 	xTaskCreate(vTaskBlink, "Led Blink 13", 16, NULL, 1, NULL);
@@ -33,7 +34,6 @@ int main (void){
 
 
 	//xTaskCreate(vTaskReadROM, "ROM", 128, NULL, 1, NULL);
-
 	xTaskCreate(vTaskSendToUART, "UART ", 128, NULL, 1, NULL);
 
 	vTaskStartScheduler();

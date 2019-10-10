@@ -25,6 +25,7 @@
 "Src/libADC.o"
 "Src/libRCC.o"
 "Src/libRTOS.o"
+"Src/libTIM.o"
 "Src/libUSART.o"
 "Src/main.o"
 "Src/stm32f1xx_hal_msp.o"
