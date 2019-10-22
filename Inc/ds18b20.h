@@ -18,7 +18,7 @@
 void port_init(void);
 uint8_t ds18b20_init(uint8_t mode,uint8_t *ROM);
 void ds18b20_MeasureTemperCmd(uint8_t mode, uint8_t *ROM);
-void ds18b20_ReadStratcpad(uint8_t mode, uint8_t *Data, uint8_t *ROM);
+void ds18b20_ReadStratcpad(uint8_t mode, uint8_t *Data1,uint8_t *Data2, uint8_t *ROM);
 uint8_t ds18b20_GetSign(uint16_t dt);
 float ds18b20_Convert(uint16_t dt);
 void ds18b20_ReadROM(uint8_t *Data);

@@ -5,6 +5,8 @@
 #include "libUSART.h"
 #include "libRCC.h"
 #include "ds18b20.h"
+#include "libEXT.h"
+#include "defines.h"
 
 
 

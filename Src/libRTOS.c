@@ -1,98 +1,58 @@
 #include "libRTOS.h"
-extern xQueueHandle TransmitDataTemp1;
-extern xQueueHandle TransmitDataTemp2;
-extern xQueueHandle TransmitDataADC3;
-extern xQueueHandle TransmitDataADC4;
-extern xQueueHandle ReceiveCommand;
-extern uint16_t valueADC[2];
 
-char commandStr[20];
+const char *OK = "OK";
+const char *ReleOn = "Rele=ON";
+const char *ReleOff = "Rele=OFF";
+const char *EXTOn = "EXTPWR=ON";
+const char *EXTOff = "EXTPWR=OFF";
+const char *ADCOn = "ADC=ON";
+const char *ADCOff = "ADC=OFF";
+
+
+extern char commandStr[20];
+
+extern uint16_t valueADC[5];
+char strbuffer[10];
+
+
 
 void vTask1Wire (void *argument){
 
-	uint8_t dt[8];
-	uint8_t ROM1[8] = {0xFC, 0x02, 0x03,0x92,0x45,0xB8, 0x89,0x28};
-	//uint8_t ROM2[8] = {0x28, 0x89, 0xB8,0x45,0x92,0x03, 0x02,0xfc};
-	//uint8_t status;
-	uint16_t raw_temper;
+	uint8_t dt1[8];
+	uint16_t raw_temper1;
+	uint8_t dt2[8];
+	uint16_t raw_temper2;
 
 	port_init();
-	ds18b20_init(SKIP_ROM,ROM1);
+	ds18b20_init(SKIP_ROM,0);
 
 while (1){
-	ds18b20_MeasureTemperCmd(SKIP_ROM, ROM1);
+	ds18b20_MeasureTemperCmd(SKIP_ROM, 0);
 	vTaskDelay(1300);
-	ds18b20_ReadStratcpad(SKIP_ROM, dt, ROM1);
-	raw_temper = ((uint16_t)dt[1]<<8)|dt[0];
-	xQueueSend(TransmitDataTemp1,&raw_temper,0);
-}
+	ds18b20_ReadStratcpad(SKIP_ROM, dt1,dt2, 0);
+	raw_temper1 = ((uint16_t)dt1[1]<<8)|dt1[0];
+	raw_temper2 = ((uint16_t)dt2[1]<<8)|dt2[0];
+
+	sprintf(strbuffer, "%u",raw_temper1);
+	USART1SendStr("Temp1      =");USART1SendStr(strbuffer);USART1SendStr("\r\n");
+	sprintf(strbuffer, "%u",raw_temper2);
+	USART1SendStr("Temp2      =");USART1SendStr(strbuffer);USART1SendStr("\r\n");
 
 }
 
-void vTaskSendToUART(void *argument){
-	uint16_t uBuffer;
-	char strbuffer[6];
-	char bufc;
-	uint8_t indexC =0;
-
-
-	USART1_GPIO_Init();
-	USART1_Mode_Init();
-
-	while (1){
-		if (uxQueueMessagesWaiting(TransmitDataTemp1)!= 0){
-			xQueueReceive(TransmitDataTemp1, &uBuffer, 0);
-			sprintf(strbuffer, "%u",uBuffer);
-			USART1SendStr("Temp1=        ");USART1SendStr(strbuffer);USART1SendStr("\r\n");
-		}
-		if (uxQueueMessagesWaiting(TransmitDataTemp2)!= 0){
-			xQueueReceive(TransmitDataTemp2, &uBuffer, 0);
-			sprintf(strbuffer, "%u",uBuffer);
-			USART1SendStr("Temp2=        ");USART1SendStr(strbuffer);USART1SendStr("\r\n");
-		}
-		if (uxQueueMessagesWaiting(TransmitDataADC3)!= 0){
-			xQueueReceive(TransmitDataADC3, &uBuffer, 0);
-
-			sprintf(strbuffer, "%u",uBuffer);
-			USART1SendStr("BatLevel=     ");USART1SendStr(strbuffer);USART1SendStr("\r\n");
-		}
-		if (uxQueueMessagesWaiting(TransmitDataADC4)!= 0){
-			xQueueReceive(TransmitDataADC4, &uBuffer, 0);
-			sprintf(strbuffer, "%u",uBuffer);
-			USART1SendStr("NoiseLevel=   ");USART1SendStr(strbuffer);USART1SendStr("\r\n");
-		}
-		if (uxQueueMessagesWaiting(ReceiveCommand)!=0){
-			xQueueReceiveFromISR(ReceiveCommand, &bufc, 0);
-			if (bufc=='\n' || bufc=='\r' || bufc==0 || indexC==(sizeof(commandStr)-1)){
-			//	NVIC_DisableIRQ(USART1_IRQn);
-				if (strcmp(strsub(commandStr,0,6), "ADC=ON" )){
-					ADC_POWER(ON);
-				}
-				if (strcmp(strsub(commandStr,0,7), "ADC=OFF" )){
-					ADC_POWER(OFF);
-				}
-				indexC=0;
-				memset(&commandStr[0], 0, sizeof(commandStr));
-			//	NVIC_EnableIRQ(USART1_IRQn);
-			}
-			else {
-			commandStr[indexC++]=bufc;
-			}
-		}
-
-		vTaskDelay(30);
-
-	}
 }
+
 void vTaskBlink( void *argument){
+	//LED C13
+	RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
+	GPIOC->CRH |= GPIO_CRH_MODE13; // PC13   - output
+	GPIOC->CRH &= ~GPIO_CRH_CNF13;  //PC13   - GP out PP
+
 	while(1){
 	GPIOC->BSRR |= GPIO_BSRR_BS13;
-	vTaskDelay(1000);
+	vTaskDelay(900);
 	GPIOC->BSRR |= GPIO_BSRR_BR13;
-	vTaskDelay(1000);
-
-
-
+	vTaskDelay(100);
 
 	}
 }
@@ -102,11 +62,26 @@ void vTaskADCConvert (void *argument){
 	ADC_Mode_Init();
 	ADC_POWER(ON);
 	ADC_DMA_Init();
+
+	USART1_GPIO_Init();
+	USART1_Mode_Init();
+
 	while (1){
 		ADC1->CR2 |= ADC_CR2_SWSTART; // start
 		while (  (DMA1->ISR & DMA_ISR_TCIF1) == 0  );
-		xQueueSend(TransmitDataADC3,&valueADC[0],0);
-		xQueueSend(TransmitDataADC4,&valueADC[1],0);
+
+
+		sprintf(strbuffer, "%u",valueADC[0]);
+		USART1SendStr("BatLevel      =");USART1SendStr(strbuffer);USART1SendStr("\r\n");
+		sprintf(strbuffer, "%u",valueADC[1]);
+		USART1SendStr("CurrentLevel  =");USART1SendStr(strbuffer);USART1SendStr("\r\n");
+		sprintf(strbuffer, "%u",valueADC[2]);
+		USART1SendStr("LED1          =");USART1SendStr(strbuffer);USART1SendStr("\r\n");
+		sprintf(strbuffer, "%u",valueADC[3]);
+		USART1SendStr("LED2          =");USART1SendStr(strbuffer);USART1SendStr("\r\n");
+		sprintf(strbuffer, "%u",valueADC[4]);
+		USART1SendStr("LED3          =");USART1SendStr(strbuffer);USART1SendStr("\r\n");
+
 		vTaskDelay(1000);
 	}
 }
@@ -156,5 +131,38 @@ void vTaskPWM(void *argument){
 
 
 
+void vTaskExeCmd (void *argument){
 
 
+		if (strncmp(commandStr, OK , 2)==0){
+			USART1SendStr("---------OK---------");
+		}
+		if (strncmp(commandStr, EXTOn , 9)==0){
+			ExtPWR(ON);
+			USART1SendStr("--- EXT POWER -- ON ---");
+		}
+		if (strncmp(commandStr, EXTOff , 10)==0){
+			ExtPWR(OFF);
+			USART1SendStr("--- EXT POWER -- OFF ---");
+		}
+		if (strncmp(commandStr, ReleOn , 7)==0){
+			Rele(ON);
+			USART1SendStr("--- RELE -- ON ---");
+		}
+		if (strncmp(commandStr, ReleOff , 8)==0){
+			Rele(OFF);
+			USART1SendStr("--- RELE -- OFF ---");
+		}
+		if (strncmp(commandStr, ADCOn , 6)==0){
+			ADC_POWER(ON);
+			USART1SendStr("--- ADC -- ON ---");
+		}
+		if (strncmp(commandStr, ADCOff , 7)==0){
+			ADC_POWER(OFF);
+			USART1SendStr("--- ADC -- OFF ---");
+		}
+
+
+
+
+}

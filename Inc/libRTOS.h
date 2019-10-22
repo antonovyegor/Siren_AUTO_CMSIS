@@ -21,6 +21,9 @@ void vTaskTempUSART(void *argument);
 void vTaskReadROM(void *argument);
 void vTaskReadROM(void *argument);
 void vTaskPWM(void *argument);
+void vTaskExeCmd (void *argument);
+
+
 
 const char* const strsub(char* s, size_t pos, size_t count);
 

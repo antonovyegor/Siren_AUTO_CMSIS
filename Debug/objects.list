@@ -23,6 +23,7 @@
 "Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.o"
 "Src/ds18b20.o"
 "Src/libADC.o"
+"Src/libEXT.o"
 "Src/libRCC.o"
 "Src/libRTOS.o"
 "Src/libTIM.o"

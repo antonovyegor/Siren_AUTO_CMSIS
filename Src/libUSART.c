@@ -1,8 +1,39 @@
 #include  "libUSART.h"
 #include "defines.h"
 
+extern char buf;
 
-extern xQueueHandle ReceiveCommand;
+
+
+void USART1_DMA_Init(void){
+
+			RCC->AHBENR |= RCC_AHBENR_DMA1EN;
+			DMA1_Channel5->CPAR = (uint32_t) &USART1->DR;
+			DMA1_Channel5->CMAR = (uint32_t) &buf;
+			DMA1_Channel5->CNDTR = 1;
+			DMA1_Channel5->CCR &= ~DMA_CCR_MSIZE;
+			DMA1_Channel5->CCR &= ~DMA_CCR_PSIZE;
+			DMA1_Channel5->CCR &= ~DMA_CCR_PINC;
+			DMA1_Channel5->CCR &= ~DMA_CCR_MINC;
+			//DMA1_Channel5->CCR |= DMA_CCR_MINC;
+
+			//DMA1_Channel5->CCR |= DMA_CCR_CIRC;
+			DMA1_Channel5->CCR &= ~DMA_CCR_CIRC;
+
+			DMA1_Channel5->CCR &= ~DMA_CCR_DIR;
+
+			//DMA1_Channel5->CCR |= DMA_CCR_TCIE;
+
+			DMA1_Channel5->CCR |= DMA_CCR_EN;
+
+			USART1->CR3 |= USART_CR3_DMAR;
+
+
+
+
+
+
+}
 
 
 
@@ -21,7 +52,7 @@ void USART1_GPIO_Init(void){
 
 void USART1_Mode_Init(void){
 
-	USART1->BRR =  0x1A1; // 417   -- 115200 48MHz
+	USART1->BRR =  0x271; // 625    -- 115200 72MHz
 
 	USART1->CR1 |= USART_CR1_UE;
 	USART1->CR1 |= USART_CR1_TE;
@@ -32,15 +63,7 @@ void USART1_Mode_Init(void){
 
 
 }
-void USART1_IRQHandler (void ){
-	char data;
-	if (USART1->SR & USART_SR_RXNE){
-		USART1->SR &= ~USART_SR_RXNE;
-		data=USART1->DR;
-		xQueueSendToBackFromISR(ReceiveCommand,&data,0);
-	}
 
-}
 void USART1SendByte(uint8_t b){
 	while (! (USART1->SR & USART_SR_TC));
 	USART1->DR = b;

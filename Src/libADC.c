@@ -1,8 +1,8 @@
 #include "libADC.h"
-#include "defines.h"
 
 
-extern uint16_t valueADC[2];
+
+extern uint16_t valueADC[5];
 
 
 
@@ -11,15 +11,41 @@ void ADC_Mode_Init(void){
 	//ADC1->CR2 &= ~ADC_CR2_CONT;
 	ADC1->CR2 |= ADC_CR2_EXTSEL;
 	ADC1->CR2 |= ADC_CR2_EXTTRIG;
-	ADC1->SQR1 &= ~ADC_SQR1_L;
-	ADC1->SQR1 |= ADC_SQR1_L_0;  /// 2
-	ADC1->SMPR2 &= ~ADC_SMPR2_SMP0; //  0 канал  сэмплирование  циклов
-	ADC1->SMPR2 &= ~ADC_SMPR2_SMP1; //  1 канал  сэмплирование  циклов
-	ADC1->SMPR2 |= ADC_SMPR2_SMP0 ;
-	ADC1->SMPR2 |= ADC_SMPR2_SMP1 ;
-	ADC1->SQR3 &= ~ADC_SQR3_SQ1;  //PA0
-	ADC1->SQR3 |= ADC_SQR3_SQ2_0;
+
 	ADC1->CR1 |= ADC_CR1_SCAN;
+
+	ADC1->SQR1 &= ~ADC_SQR1_L;
+	ADC1->SQR1 |= ADC_SQR1_L_2 ;  /// 0100 - 5 измерения
+
+	//обнуление
+	ADC1->SMPR2 &= ~ADC_SMPR2_SMP0; //  0 канал
+	ADC1->SMPR2 &= ~ADC_SMPR2_SMP1; //  1 канал
+	ADC1->SMPR2 &= ~ADC_SMPR2_SMP2; //  2 канал
+	ADC1->SMPR2 &= ~ADC_SMPR2_SMP3; //  3 канал
+	ADC1->SMPR2 &= ~ADC_SMPR2_SMP4; //  4 канал
+
+	ADC1->SMPR2 |= ADC_SMPR2_SMP0 ; // 111 - 289.5 циклов
+	ADC1->SMPR2 |= ADC_SMPR2_SMP1 ;
+	ADC1->SMPR2 |= ADC_SMPR2_SMP2 ;
+	ADC1->SMPR2 |= ADC_SMPR2_SMP3 ;
+	ADC1->SMPR2 |= ADC_SMPR2_SMP4 ;
+
+	ADC1->SQR3 &= ~ADC_SQR3_SQ1;
+	ADC1->SQR3 &= ~ADC_SQR3_SQ2;
+	ADC1->SQR3 &= ~ADC_SQR3_SQ3;
+	ADC1->SQR3 &= ~ADC_SQR3_SQ4;
+	ADC1->SQR3 &= ~ADC_SQR3_SQ5;
+
+
+	ADC1->SQR3 &= ~ADC_SQR3_SQ1;  //00  //PA0
+
+	ADC1->SQR3 |= ADC_SQR3_SQ2_0; //01
+
+	ADC1->SQR3 |=ADC_SQR3_SQ3_1 ; // 10
+
+	ADC1->SQR3 |= ADC_SQR3_SQ4_0 | ADC_SQR3_SQ4_1 ; // 11
+
+	ADC1->SQR3 |= ADC_SQR3_SQ5_2 ; // 100
 
 
 }
@@ -59,6 +85,10 @@ void ADC_GPIO_Init(void){
 	GPIOA->CRL &= ~GPIO_CRL_MODE3; // PA3   - input
 	GPIOA->CRL &= ~GPIO_CRL_CNF3;  //PA3    - analog mode
 
+	GPIOA->CRL &= ~GPIO_CRL_MODE4; // PA4   - input
+	GPIOA->CRL &= ~GPIO_CRL_CNF4;  //PA4    - analog mode
+
+
 
 }
 
@@ -69,7 +99,7 @@ void ADC_DMA_Init(void){
 		RCC->AHBENR |= RCC_AHBENR_DMA1EN;
 		DMA1_Channel1->CPAR = (uint32_t) &ADC1->DR;
 		DMA1_Channel1->CMAR = (uint32_t) &valueADC[0];
-		DMA1_Channel1->CNDTR = 2;
+		DMA1_Channel1->CNDTR = 5;
 		DMA1_Channel1->CCR |= DMA_CCR_MSIZE_0;
 		DMA1_Channel1->CCR |= DMA_CCR_PSIZE_0;
 		DMA1_Channel1->CCR &= ~DMA_CCR_PINC;

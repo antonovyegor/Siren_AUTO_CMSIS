@@ -1,4 +1,6 @@
 #include "stm32f1xx.h"
+#include "defines.h"
+#include "string.h"
 
 
 void ADC_Mode_Init(void);
